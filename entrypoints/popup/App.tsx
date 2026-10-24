@@ -1,24 +1,84 @@
 import { useEffect, useState } from 'react';
+import {
+  defaultSettings,
+  FONT_STACKS,
+  getSettings,
+  saveSettings,
+  type FontChoice,
+  type Settings,
+} from '../../utils/settings';
+
+function Slider(props: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <label style={{ display: 'grid', gap: 4 }}>
+      <span>
+        {props.label}: {props.value}
+      </span>
+      <input
+        type="range"
+        min={props.min}
+        max={props.max}
+        step={props.step}
+        value={props.value}
+        onChange={(e) => props.onChange(Number(e.target.value))}
+      />
+    </label>
+  );
+}
 
 function App() {
-  const [on, setOn] = useState(false);
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
 
   useEffect(() => {
-    browser.storage.sync.get('dyslexia').then((r) => setOn(!!r.dyslexia));
+    getSettings().then(setSettings);
   }, []);
 
-  const toggle = async () => {
-    const next = !on;
-    setOn(next);
-    await browser.storage.sync.set({ dyslexia: next });
+  const update = (patch: Partial<Settings>) => {
+    const next = { ...settings, ...patch };
+    setSettings(next);
+    saveSettings(next);
   };
 
   return (
-    <div style={{ width: 240, padding: 16 }}>
-      <h1 style={{ fontSize: 16, marginBottom: 8 }}>A11y Helper</h1>
+    <div style={{ width: 280, padding: 16, color: 'white', display: 'grid', gap: 12 }}>
+      <h1 style={{ fontSize: 16, margin: 0 }}>A11y Helper</h1>
+
       <label>
-        <input type="checkbox" checked={on} onChange={toggle} /> Dyslexia-friendly text
+        <input
+          type="checkbox"
+          checked={settings.enabled}
+          onChange={(e) => update({ enabled: e.target.checked })}
+        />{' '}
+        Dyslexia-friendly text
       </label>
+
+      <label style={{ display: 'grid', gap: 4 }}>
+        Font
+        <select
+          value={settings.font}
+          onChange={(e) => update({ font: e.target.value as FontChoice })}
+        >
+          {Object.keys(FONT_STACKS).map((f) => (
+            <option key={f} value={f}>
+              {f}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <Slider label="Line height" value={settings.lineHeight} min={1.2} max={2.4} step={0.1}
+        onChange={(v) => update({ lineHeight: v })} />
+      <Slider label="Letter spacing (em)" value={settings.letterSpacing} min={0} max={0.2} step={0.01}
+        onChange={(v) => update({ letterSpacing: v })} />
+      <Slider label="Word spacing (em)" value={settings.wordSpacing} min={0} max={0.5} step={0.05}
+        onChange={(v) => update({ wordSpacing: v })} />
     </div>
   );
 }
