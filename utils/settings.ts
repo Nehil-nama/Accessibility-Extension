@@ -1,3 +1,5 @@
+import type { ColorBlindMode, ColorBlindType } from './colorblind';
+
 export type FontChoice = 'verdana' | 'arial' | 'tahoma' | 'trebuchet';
 
 export interface Settings {
@@ -6,6 +8,8 @@ export interface Settings {
   lineHeight: number;    // unitless multiplier
   letterSpacing: number; // em
   wordSpacing: number;   // em
+  colorBlind: ColorBlindType;
+  colorBlindMode: ColorBlindMode;
 }
 
 export const defaultSettings: Settings = {
@@ -14,6 +18,8 @@ export const defaultSettings: Settings = {
   lineHeight: 1.8,
   letterSpacing: 0.05,
   wordSpacing: 0.15,
+  colorBlind: 'none',
+  colorBlindMode: 'correct',
 };
 
 export const FONT_STACKS: Record<FontChoice, string> = {

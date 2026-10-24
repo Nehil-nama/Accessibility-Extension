@@ -1,3 +1,5 @@
+import type { ColorBlindMode, ColorBlindType } from '../../utils/colorblind';
+
 import { useEffect, useState } from 'react';
 import {
   defaultSettings,
@@ -70,6 +72,30 @@ function App() {
               {f}
             </option>
           ))}
+        </select>
+      </label>
+
+            <label style={{ display: 'grid', gap: 4 }}>
+        Color vision
+        <select
+          value={settings.colorBlind}
+          onChange={(e) => update({ colorBlind: e.target.value as ColorBlindType })}
+        >
+          <option value="none">Off</option>
+          <option value="protanopia">Protanopia (red-weak)</option>
+          <option value="deuteranopia">Deuteranopia (green-weak)</option>
+          <option value="tritanopia">Tritanopia (blue-weak)</option>
+        </select>
+      </label>
+
+      <label style={{ display: 'grid', gap: 4 }}>
+        Mode
+        <select
+          value={settings.colorBlindMode}
+          onChange={(e) => update({ colorBlindMode: e.target.value as ColorBlindMode })}
+        >
+          <option value="correct">Help me see differences</option>
+          <option value="simulate">Simulate (for testing)</option>
         </select>
       </label>
 
