@@ -9,7 +9,9 @@ export interface Settings {
   letterSpacing: number; // em
   wordSpacing: number;   // em
   colorBlind: ColorBlindType;
-  colorBlindMode: ColorBlindMode;
+  colorBlindMode: ColorBlindMode;ruler: boolean;
+  rulerHeight: number; // px
+  rulerDim: number;    // 0 to 1 opacity of the dimmed area
 }
 
 export const defaultSettings: Settings = {
@@ -20,6 +22,9 @@ export const defaultSettings: Settings = {
   wordSpacing: 0.15,
   colorBlind: 'none',
   colorBlindMode: 'correct',
+  ruler: false,
+  rulerHeight: 48,
+  rulerDim: 0.5,
 };
 
 export const FONT_STACKS: Record<FontChoice, string> = {

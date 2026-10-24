@@ -53,9 +53,60 @@ function applyColorBlind(s: Settings) {
   document.documentElement.style.filter = `url(#${CB_FILTER_ID})`;
 }
 
+const RULER_ID = 'a11y-helper-ruler';
+let rulerEl: HTMLDivElement | null = null;
+let rulerHeight = 48;
+let rulerY = 0;
+let frame = 0;
+
+function placeRuler() {
+  frame = 0;
+  if (rulerEl) {
+    rulerEl.style.transform = `translateY(${rulerY - rulerHeight / 2}px)`;
+  }
+}
+
+function onMouseMove(e: MouseEvent) {
+  rulerY = e.clientY;
+  // at most one update per animation frame, so mouse movement stays smooth
+  if (!frame) frame = requestAnimationFrame(placeRuler);
+}
+
+function applyRuler(s: Settings) {
+  if (!s.ruler) {
+    rulerEl?.remove();
+    rulerEl = null;
+    document.removeEventListener('mousemove', onMouseMove);
+    return;
+  }
+
+  rulerHeight = s.rulerHeight;
+
+  if (!rulerEl) {
+    rulerEl = document.createElement('div');
+    rulerEl.id = RULER_ID;
+    document.documentElement.append(rulerEl);
+    document.addEventListener('mousemove', onMouseMove);
+    rulerY = window.innerHeight / 2;
+  }
+
+  Object.assign(rulerEl.style, {
+    position: 'fixed',
+    top: '0',
+    left: '0',
+    right: '0',
+    height: `${s.rulerHeight}px`,
+    pointerEvents: 'none',
+    zIndex: '2147483647',
+    boxShadow: `0 0 0 100vmax rgba(0, 0, 0, ${s.rulerDim})`,
+  });
+  placeRuler();
+}
+
 function applyAll(s: Settings) {
   applyTypography(s);
   applyColorBlind(s);
+  applyRuler(s);
 }
 
 export default defineContentScript({

@@ -99,6 +99,24 @@ function App() {
         </select>
       </label>
 
+            <label>
+        <input
+          type="checkbox"
+          checked={settings.ruler}
+          onChange={(e) => update({ ruler: e.target.checked })}
+        />{' '}
+        Reading ruler
+      </label>
+
+      {settings.ruler && (
+        <>
+          <Slider label="Ruler height (px)" value={settings.rulerHeight} min={24} max={120} step={4}
+            onChange={(v) => update({ rulerHeight: v })} />
+          <Slider label="Dimming" value={settings.rulerDim} min={0.1} max={0.9} step={0.05}
+            onChange={(v) => update({ rulerDim: v })} />
+        </>
+      )}
+
       <Slider label="Line height" value={settings.lineHeight} min={1.2} max={2.4} step={0.1}
         onChange={(v) => update({ lineHeight: v })} />
       <Slider label="Letter spacing (em)" value={settings.letterSpacing} min={0} max={0.2} step={0.01}
