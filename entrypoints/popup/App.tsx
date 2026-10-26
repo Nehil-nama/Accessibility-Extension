@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { ColorBlindMode, ColorBlindType } from '../../utils/colorblind';
 import {
   defaultSettings,
-  FONT_STACKS,
   getGlobal,
   getSite,
   removeSite,
@@ -11,6 +10,72 @@ import {
   type FontChoice,
   type Settings,
 } from '../../utils/settings';
+
+const FONT_OPTIONS: { value: FontChoice; label: string }[] = [
+  { value: 'verdana', label: 'Verdana' },
+  { value: 'arial', label: 'Arial' },
+  { value: 'tahoma', label: 'Tahoma' },
+  { value: 'trebuchet', label: 'Trebuchet MS' },
+];
+
+const COLOR_OPTIONS: { value: ColorBlindType; label: string }[] = [
+  { value: 'none', label: 'Off' },
+  { value: 'protanopia', label: 'Protanopia (red-weak)' },
+  { value: 'deuteranopia', label: 'Deuteranopia (green-weak)' },
+  { value: 'tritanopia', label: 'Tritanopia (blue-weak)' },
+];
+
+const MODE_OPTIONS: { value: ColorBlindMode; label: string }[] = [
+  { value: 'correct', label: 'Help me see differences' },
+  { value: 'simulate', label: 'Simulate (for testing)' },
+];
+
+function Switch(props: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={props.checked}
+      disabled={props.disabled}
+      onClick={() => props.onChange(!props.checked)}
+      className="group flex w-full items-center justify-between gap-3 rounded-md py-1 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-50"
+    >
+      <span className="break-all">{props.label}</span>
+      <span className="relative h-6 w-11 shrink-0 rounded-full border-2 border-ink bg-white group-aria-checked:bg-ink">
+        <span className="absolute left-0.5 top-0.5 size-4 rounded-full bg-ink transition-transform group-aria-checked:translate-x-5 group-aria-checked:bg-white" />
+      </span>
+    </button>
+  );
+}
+
+function Select<T extends string>(props: {
+  label: string;
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+}) {
+  return (
+    <label className="grid gap-1">
+      <span className="font-bold">{props.label}</span>
+      <select
+        value={props.value}
+        onChange={(e) => props.onChange(e.target.value as T)}
+        className="h-9 rounded-md border-2 border-line bg-white px-2 focus-visible:border-ink focus-visible:outline-none"
+      >
+        {props.options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
 function Slider(props: {
   label: string;
@@ -21,9 +86,10 @@ function Slider(props: {
   onChange: (v: number) => void;
 }) {
   return (
-    <label style={{ display: 'grid', gap: 4 }}>
-      <span>
-        {props.label}: {props.value}
+    <label className="grid gap-1">
+      <span className="flex justify-between">
+        <span>{props.label}</span>
+        <span className="tabular-nums text-muted">{props.value}</span>
       </span>
       <input
         type="range"
@@ -32,8 +98,18 @@ function Slider(props: {
         step={props.step}
         value={props.value}
         onChange={(e) => props.onChange(Number(e.target.value))}
+        className="accent-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       />
     </label>
+  );
+}
+
+function Section(props: { title: string; children: ReactNode }) {
+  return (
+    <section className="grid gap-3 border-t-2 border-line pt-3">
+      <h2 className="font-bold">{props.title}</h2>
+      {props.children}
+    </section>
   );
 }
 
@@ -79,7 +155,6 @@ function App() {
   const toggleCustom = async (on: boolean) => {
     if (!host) return;
     if (on) {
-      // start the site's settings as a copy of the global ones
       setSiteSettings(globalSettings);
       await saveSite(host, globalSettings);
     } else {
@@ -89,93 +164,77 @@ function App() {
   };
 
   return (
-    <div style={{ width: 280, padding: 16, color: 'white', display: 'grid', gap: 12 }}>
-      <h1 style={{ fontSize: 16, margin: 0 }}>A11y Helper</h1>
+    <div className="grid w-80 gap-3 p-4 text-base">
+      <header className="-mx-4 -mt-4 bg-band px-4 py-3">
+        <h1 className="text-lg font-bold">A11y Helper</h1>
+      </header>
 
-      <label>
-        <input
-          type="checkbox"
-          disabled={!host}
+      <div className="grid gap-1">
+        <Switch
+          label={host ? `Custom settings for ${host}` : 'Custom settings for this site'}
           checked={useCustom}
-          onChange={(e) => toggleCustom(e.target.checked)}
-        />{' '}
-        Custom settings for {host ?? 'this page (unavailable)'}
-      </label>
-      <div style={{ fontSize: 12, opacity: 0.7 }}>
-        Editing: {useCustom ? host : 'all sites'}
+          disabled={!host}
+          onChange={toggleCustom}
+        />
+        <p className="text-sm text-muted">
+          {!host
+            ? 'Open a website to set options for just that site.'
+            : useCustom
+              ? `Changes apply only to ${host}.`
+              : 'Changes apply to all sites.'}
+        </p>
       </div>
 
-      <label>
-        <input
-          type="checkbox"
+      <Section title="Text">
+        <Switch
+          label="Dyslexia-friendly text"
           checked={settings.enabled}
-          onChange={(e) => update({ enabled: e.target.checked })}
-        />{' '}
-        Dyslexia-friendly text
-      </label>
-
-      <label style={{ display: 'grid', gap: 4 }}>
-        Font
-        <select
+          onChange={(v) => update({ enabled: v })}
+        />
+        <Select
+          label="Font"
           value={settings.font}
-          onChange={(e) => update({ font: e.target.value as FontChoice })}
-        >
-          {Object.keys(FONT_STACKS).map((f) => (
-            <option key={f} value={f}>
-              {f}
-            </option>
-          ))}
-        </select>
-      </label>
+          options={FONT_OPTIONS}
+          onChange={(v) => update({ font: v })}
+        />
+        <Slider label="Line height" value={settings.lineHeight} min={1.2} max={2.4} step={0.1}
+          onChange={(v) => update({ lineHeight: v })} />
+        <Slider label="Letter spacing (em)" value={settings.letterSpacing} min={0} max={0.2} step={0.01}
+          onChange={(v) => update({ letterSpacing: v })} />
+        <Slider label="Word spacing (em)" value={settings.wordSpacing} min={0} max={0.5} step={0.05}
+          onChange={(v) => update({ wordSpacing: v })} />
+      </Section>
 
-      <label style={{ display: 'grid', gap: 4 }}>
-        Color vision
-        <select
+      <Section title="Color vision">
+        <Select
+          label="Type"
           value={settings.colorBlind}
-          onChange={(e) => update({ colorBlind: e.target.value as ColorBlindType })}
-        >
-          <option value="none">Off</option>
-          <option value="protanopia">Protanopia (red-weak)</option>
-          <option value="deuteranopia">Deuteranopia (green-weak)</option>
-          <option value="tritanopia">Tritanopia (blue-weak)</option>
-        </select>
-      </label>
-
-      <label style={{ display: 'grid', gap: 4 }}>
-        Mode
-        <select
+          options={COLOR_OPTIONS}
+          onChange={(v) => update({ colorBlind: v })}
+        />
+        <Select
+          label="Mode"
           value={settings.colorBlindMode}
-          onChange={(e) => update({ colorBlindMode: e.target.value as ColorBlindMode })}
-        >
-          <option value="correct">Help me see differences</option>
-          <option value="simulate">Simulate (for testing)</option>
-        </select>
-      </label>
+          options={MODE_OPTIONS}
+          onChange={(v) => update({ colorBlindMode: v })}
+        />
+      </Section>
 
-      <label>
-        <input
-          type="checkbox"
+      <Section title="Reading ruler">
+        <Switch
+          label="Show ruler"
           checked={settings.ruler}
-          onChange={(e) => update({ ruler: e.target.checked })}
-        />{' '}
-        Reading ruler
-      </label>
-
-      {settings.ruler && (
-        <>
-          <Slider label="Ruler height (px)" value={settings.rulerHeight} min={24} max={120} step={4}
-            onChange={(v) => update({ rulerHeight: v })} />
-          <Slider label="Dimming" value={settings.rulerDim} min={0.1} max={0.9} step={0.05}
-            onChange={(v) => update({ rulerDim: v })} />
-        </>
-      )}
-
-      <Slider label="Line height" value={settings.lineHeight} min={1.2} max={2.4} step={0.1}
-        onChange={(v) => update({ lineHeight: v })} />
-      <Slider label="Letter spacing (em)" value={settings.letterSpacing} min={0} max={0.2} step={0.01}
-        onChange={(v) => update({ letterSpacing: v })} />
-      <Slider label="Word spacing (em)" value={settings.wordSpacing} min={0} max={0.5} step={0.05}
-        onChange={(v) => update({ wordSpacing: v })} />
+          onChange={(v) => update({ ruler: v })}
+        />
+        {settings.ruler && (
+          <>
+            <Slider label="Height (px)" value={settings.rulerHeight} min={24} max={120} step={4}
+              onChange={(v) => update({ rulerHeight: v })} />
+            <Slider label="Dimming" value={settings.rulerDim} min={0.1} max={0.9} step={0.05}
+              onChange={(v) => update({ rulerDim: v })} />
+          </>
+        )}
+      </Section>
     </div>
   );
 }
