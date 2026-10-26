@@ -4,6 +4,6 @@ export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
     name: 'A11y Helper',
-    permissions: ['storage'],
+        permissions: ['storage', 'activeTab'],
   },
 });

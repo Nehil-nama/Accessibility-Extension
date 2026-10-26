@@ -1,5 +1,7 @@
-import { defaultSettings, FONT_STACKS, getSettings, type Settings } from '../utils/settings';
+import { FONT_STACKS, getEffective, GLOBAL_KEY, siteKey, type Settings } from '../utils/settings';
 import { buildMatrixValues } from '../utils/colorblind';
+
+
 
 const STYLE_ID = 'a11y-helper-style';
 const CB_SVG_ID = 'a11y-helper-cb-svg';
@@ -112,11 +114,16 @@ function applyAll(s: Settings) {
 export default defineContentScript({
   matches: ['<all_urls>'],
   main() {
-    getSettings().then(applyAll);
-    browser.storage.onChanged.addListener((changes) => {
-      const change = changes.settings;
-      if (change) {
-        applyAll({ ...defaultSettings, ...(change.newValue as Partial<Settings>) });
+    const host = location.hostname;
+    const refresh = () => getEffective(host).then(applyAll);
+
+    refresh();
+
+    browser.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'sync') return;
+      // only react if our global settings or this site's settings changed
+      if (GLOBAL_KEY in changes || siteKey(host) in changes) {
+        refresh();
       }
     });
   },

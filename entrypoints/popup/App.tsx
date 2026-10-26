@@ -1,11 +1,13 @@
-import type { ColorBlindMode, ColorBlindType } from '../../utils/colorblind';
-
 import { useEffect, useState } from 'react';
+import type { ColorBlindMode, ColorBlindType } from '../../utils/colorblind';
 import {
   defaultSettings,
   FONT_STACKS,
-  getSettings,
-  saveSettings,
+  getGlobal,
+  getSite,
+  removeSite,
+  saveGlobal,
+  saveSite,
   type FontChoice,
   type Settings,
 } from '../../utils/settings';
@@ -35,22 +37,73 @@ function Slider(props: {
   );
 }
 
+async function getActiveHost(): Promise<string | null> {
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.url) return null;
+  try {
+    const url = new URL(tab.url);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.hostname : null;
+  } catch {
+    return null;
+  }
+}
+
 function App() {
-  const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const [host, setHost] = useState<string | null>(null);
+  const [globalSettings, setGlobalSettings] = useState<Settings>(defaultSettings);
+  const [siteSettings, setSiteSettings] = useState<Settings | null>(null);
 
   useEffect(() => {
-    getSettings().then(setSettings);
+    (async () => {
+      const h = await getActiveHost();
+      setHost(h);
+      setGlobalSettings(await getGlobal());
+      if (h) setSiteSettings(await getSite(h));
+    })();
   }, []);
+
+  const settings = siteSettings ?? globalSettings;
+  const useCustom = siteSettings !== null;
 
   const update = (patch: Partial<Settings>) => {
     const next = { ...settings, ...patch };
-    setSettings(next);
-    saveSettings(next);
+    if (host && siteSettings) {
+      setSiteSettings(next);
+      saveSite(host, next);
+    } else {
+      setGlobalSettings(next);
+      saveGlobal(next);
+    }
+  };
+
+  const toggleCustom = async (on: boolean) => {
+    if (!host) return;
+    if (on) {
+      // start the site's settings as a copy of the global ones
+      setSiteSettings(globalSettings);
+      await saveSite(host, globalSettings);
+    } else {
+      setSiteSettings(null);
+      await removeSite(host);
+    }
   };
 
   return (
     <div style={{ width: 280, padding: 16, color: 'white', display: 'grid', gap: 12 }}>
       <h1 style={{ fontSize: 16, margin: 0 }}>A11y Helper</h1>
+
+      <label>
+        <input
+          type="checkbox"
+          disabled={!host}
+          checked={useCustom}
+          onChange={(e) => toggleCustom(e.target.checked)}
+        />{' '}
+        Custom settings for {host ?? 'this page (unavailable)'}
+      </label>
+      <div style={{ fontSize: 12, opacity: 0.7 }}>
+        Editing: {useCustom ? host : 'all sites'}
+      </div>
 
       <label>
         <input
@@ -75,7 +128,7 @@ function App() {
         </select>
       </label>
 
-            <label style={{ display: 'grid', gap: 4 }}>
+      <label style={{ display: 'grid', gap: 4 }}>
         Color vision
         <select
           value={settings.colorBlind}
@@ -99,7 +152,7 @@ function App() {
         </select>
       </label>
 
-            <label>
+      <label>
         <input
           type="checkbox"
           checked={settings.ruler}

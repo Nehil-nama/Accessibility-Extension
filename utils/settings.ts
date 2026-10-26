@@ -5,13 +5,14 @@ export type FontChoice = 'verdana' | 'arial' | 'tahoma' | 'trebuchet';
 export interface Settings {
   enabled: boolean;
   font: FontChoice;
-  lineHeight: number;    // unitless multiplier
-  letterSpacing: number; // em
-  wordSpacing: number;   // em
+  lineHeight: number;
+  letterSpacing: number;
+  wordSpacing: number;
   colorBlind: ColorBlindType;
-  colorBlindMode: ColorBlindMode;ruler: boolean;
-  rulerHeight: number; // px
-  rulerDim: number;    // 0 to 1 opacity of the dimmed area
+  colorBlindMode: ColorBlindMode;
+  ruler: boolean;
+  rulerHeight: number;
+  rulerDim: number;
 }
 
 export const defaultSettings: Settings = {
@@ -34,11 +35,34 @@ export const FONT_STACKS: Record<FontChoice, string> = {
   trebuchet: '"Trebuchet MS", Helvetica, sans-serif',
 };
 
-export async function getSettings(): Promise<Settings> {
-  const r = await browser.storage.sync.get('settings');
-  return { ...defaultSettings, ...(r.settings ?? {}) };
+export const GLOBAL_KEY = 'global';
+export const siteKey = (host: string) => `site:${host}`;
+
+export async function getGlobal(): Promise<Settings> {
+  const r = await browser.storage.sync.get(GLOBAL_KEY);
+  return { ...defaultSettings, ...(r[GLOBAL_KEY] ?? {}) };
 }
 
-export function saveSettings(s: Settings) {
-  return browser.storage.sync.set({ settings: s });
+export function saveGlobal(s: Settings) {
+  return browser.storage.sync.set({ [GLOBAL_KEY]: s });
+}
+
+// null means "this site has no custom settings"
+export async function getSite(host: string): Promise<Settings | null> {
+  const key = siteKey(host);
+  const r = await browser.storage.sync.get(key);
+  return r[key] ? { ...defaultSettings, ...r[key] } : null;
+}
+
+export function saveSite(host: string, s: Settings) {
+  return browser.storage.sync.set({ [siteKey(host)]: s });
+}
+
+export function removeSite(host: string) {
+  return browser.storage.sync.remove(siteKey(host));
+}
+
+// What a page should actually use: its own settings if it has them, else global
+export async function getEffective(host: string): Promise<Settings> {
+  return (await getSite(host)) ?? (await getGlobal());
 }
