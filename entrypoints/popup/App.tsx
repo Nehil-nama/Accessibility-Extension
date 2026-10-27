@@ -10,6 +10,7 @@ import {
   type FontChoice,
   type Settings,
 } from '../../utils/settings';
+import { getActiveHost } from '../../utils/tabs';
 
 const FONT_OPTIONS: { value: FontChoice; label: string }[] = [
   { value: 'verdana', label: 'Verdana' },
@@ -113,16 +114,6 @@ function Section(props: { title: string; children: ReactNode }) {
   );
 }
 
-async function getActiveHost(): Promise<string | null> {
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.url) return null;
-  try {
-    const url = new URL(tab.url);
-    return url.protocol === 'http:' || url.protocol === 'https:' ? url.hostname : null;
-  } catch {
-    return null;
-  }
-}
 
 function App() {
   const [host, setHost] = useState<string | null>(null);
@@ -235,6 +226,18 @@ function App() {
           </>
         )}
       </Section>
+
+            <div className="grid gap-1 border-t-2 border-line pt-3 text-sm text-muted">
+        <p>Shortcuts: Alt+Shift+T text, R ruler, C color filter.</p>
+        <button
+          type="button"
+          onClick={() => browser.tabs.create({ url: 'chrome://extensions/shortcuts' })}
+          className="w-fit rounded-md font-bold text-ink underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        >
+          Change shortcuts
+        </button>
+      </div>
+
     </div>
   );
 }

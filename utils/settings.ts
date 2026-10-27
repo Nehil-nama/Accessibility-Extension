@@ -66,3 +66,13 @@ export function removeSite(host: string) {
 export async function getEffective(host: string): Promise<Settings> {
   return (await getSite(host)) ?? (await getGlobal());
 }
+
+// Save a change where it belongs: the site's own settings if it has any, else global
+export async function updateForHost(host: string, patch: Partial<Settings>) {
+  const site = await getSite(host);
+  if (site) {
+    await saveSite(host, { ...site, ...patch });
+  } else {
+    await saveGlobal({ ...(await getGlobal()), ...patch });
+  }
+}
