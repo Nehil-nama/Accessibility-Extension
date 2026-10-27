@@ -13,6 +13,8 @@ export interface Settings {
   ruler: boolean;
   rulerHeight: number;
   rulerDim: number;
+  speechRate: number;
+  voiceName: string; // empty string means the system default voice
 }
 
 export const defaultSettings: Settings = {
@@ -26,6 +28,8 @@ export const defaultSettings: Settings = {
   ruler: false,
   rulerHeight: 48,
   rulerDim: 0.5,
+  speechRate: 1.0,
+  voiceName: '',
 };
 
 export const FONT_STACKS: Record<FontChoice, string> = {

@@ -31,6 +31,9 @@ const MODE_OPTIONS: { value: ColorBlindMode; label: string }[] = [
   { value: 'simulate', label: 'Simulate (for testing)' },
 ];
 
+type VoiceOption = { value: string; label: string };
+const DEFAULT_VOICE: VoiceOption = { value: '', label: 'Default voice' };
+
 function Switch(props: {
   label: string;
   checked: boolean;
@@ -118,7 +121,8 @@ function Section(props: { title: string; children: ReactNode }) {
 function App() {
   const [host, setHost] = useState<string | null>(null);
   const [globalSettings, setGlobalSettings] = useState<Settings>(defaultSettings);
-  const [siteSettings, setSiteSettings] = useState<Settings | null>(null);
+    const [siteSettings, setSiteSettings] = useState<Settings | null>(null);
+  const [voices, setVoices] = useState<VoiceOption[]>([DEFAULT_VOICE]);
 
   useEffect(() => {
     (async () => {
@@ -127,6 +131,23 @@ function App() {
       setGlobalSettings(await getGlobal());
       if (h) setSiteSettings(await getSite(h));
     })();
+  }, []);
+
+  useEffect(() => {
+    browser.tts.getVoices().then((list) => {
+      const seen = new Set<string>();
+      const opts: VoiceOption[] = [];
+      for (const v of list) {
+        if (!v.voiceName || seen.has(v.voiceName)) continue;
+        seen.add(v.voiceName);
+        opts.push({
+          value: v.voiceName,
+          label: v.lang ? `${v.voiceName} (${v.lang})` : v.voiceName,
+        });
+      }
+      opts.sort((a, b) => a.label.localeCompare(b.label));
+      setVoices([DEFAULT_VOICE, ...opts]);
+    });
   }, []);
 
   const settings = siteSettings ?? globalSettings;
@@ -227,13 +248,40 @@ function App() {
         )}
       </Section>
 
-            <div className="grid gap-1 border-t-2 border-line pt-3 text-sm text-muted">
-        <p>Shortcuts: Alt+Shift+T text, R ruler, C color filter.</p>
+      <Section title="Read aloud">
+        <p className="text-sm text-muted">Select text on the page, then press the button.</p>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => browser.runtime.sendMessage({ type: 'speak' })}
+            className="h-9 flex-1 rounded-md bg-ink font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          >
+            Read selected text
+          </button>
+          <button
+            type="button"
+            onClick={() => browser.runtime.sendMessage({ type: 'stop' })}
+            className="h-9 rounded-md border-2 border-ink px-3 font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          >
+            Stop
+          </button>
+        </div>
+        <Select
+          label="Voice"
+          value={settings.voiceName}
+          options={voices}
+          onChange={(v) => update({ voiceName: v })}
+        />
+        <Slider label="Speed" value={settings.speechRate} min={0.5} max={2} step={0.1}
+          onChange={(v) => update({ speechRate: v })} />
+      </Section>
+
+      <div className="grid gap-1 border-t-2 border-line pt-3 text-sm text-muted">
+        <p>Shortcuts: Alt+Shift+T text, R ruler, C color filter, S read aloud.</p>
         <button
           type="button"
           onClick={() => browser.tabs.create({ url: 'chrome://extensions/shortcuts' })}
-          className="w-fit rounded-md font-bold text-ink underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
+          className="w-fit rounded-md font-bold text-ink underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink">
           Change shortcuts
         </button>
       </div>

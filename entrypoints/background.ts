@@ -1,13 +1,19 @@
 import type { ColorBlindType } from '../utils/colorblind';
 import { getEffective, updateForHost } from '../utils/settings';
+import { speakSelection, stopSpeech, toggleSpeech } from '../utils/speech';
 import { getActiveHost } from '../utils/tabs';
 
 const COLOR_CYCLE: ColorBlindType[] = ['none', 'protanopia', 'deuteranopia', 'tritanopia'];
 
 export default defineBackground(() => {
   browser.commands.onCommand.addListener(async (command) => {
+    if (command === 'speak-selection') {
+      await toggleSpeech();
+      return;
+    }
+
     const host = await getActiveHost();
-    if (!host) return; // chrome:// pages and similar can't be changed
+    if (!host) return;
 
     const current = await getEffective(host);
 
@@ -24,5 +30,12 @@ export default defineBackground(() => {
         break;
       }
     }
+  });
+
+  // Messages from the popup buttons
+  browser.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (msg?.type === 'speak') void speakSelection();
+    else if (msg?.type === 'stop') stopSpeech();
+    sendResponse({ ok: true });
   });
 });
