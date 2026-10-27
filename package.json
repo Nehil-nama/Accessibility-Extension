@@ -2,7 +2,7 @@
   "name": "a11y-helper",
   "description": "A11y helper extension for improving accessibility of website for colorblind users and dyslexic users.",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",

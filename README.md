@@ -12,6 +12,8 @@ Most websites are designed for one kind of reader. Tight line spacing, low-varie
 - Color vision support: filters for protanopia, deuteranopia, and tritanopia, with two modes: *Help me see differences* (shifts confusable colors apart) and *Simulate* (shows what a color-blind person sees, useful for testing designs).
 - Reading ruler: a highlighted band follows your mouse and dims the rest of the page. Height and dimming are adjustable.
 - Per-site settings: keep one set of defaults for all sites, and give any site its own settings.
+- Keyboard shortcuts: toggle text styling (Alt+Shift+T), the reading ruler (Alt+Shift+R), cycle the color filter (Alt+Shift+C), and read selected text aloud (Alt+Shift+S). Rebind them at `chrome://extensions/shortcuts`.
+- Read aloud: select text on a page and have it spoken, with a choice of voice and speed. Press the shortcut again to stop.
 
 ## Demo
 
@@ -20,6 +22,12 @@ Most websites are designed for one kind of reader. Tight line spacing, low-varie
 | ![Original](docs/ishihara-original.png) | ![Simulated](docs/ishihara-simulated.png) |
 
 ![Reading ruler](docs/ruler.gif)
+
+## Install
+
+1. Download the latest `a11y-helper-*-chrome.zip` from the [Releases](../../releases) page and unzip it.
+2. Open `chrome://extensions` and turn on **Developer mode**.
+3. Click **Load unpacked** and select the unzipped folder.
 
 ## Install (development)
 
@@ -58,6 +66,8 @@ WXT (Manifest V3), React, TypeScript, Tailwind CSS.
 - Subdomains are treated as separate sites (`en.wikipedia.org` and `www.wikipedia.org`).
 - Color correction is an approximation. Color vision varies between people.
 - Text size is not adjustable yet, because many sites use fixed pixel sizes.
+- Read aloud uses Chrome's text-to-speech API, so it works in Chrome and Edge but not Firefox. It reads the selected text in the main page, not inside embedded frames.
+- If a shortcut shows "Not set" at `chrome://extensions/shortcuts`, another extension or Chrome is using that key combination. Assign a different one there.
 
 ## Roadmap
 
